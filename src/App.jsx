@@ -18,9 +18,11 @@ import OrderDetails from "./pages/Orders/OrderDetails";
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/admin" replace />} />
+      {/* DEFAULT ROUTE */}
+      <Route path="/" element={<Navigate to="/admin/customers" replace />} />
 
-      <Route path="/admin" element={<Dashboard />} />
+      {/* DEFAULT ADMIN REDIRECT */}
+      <Route path="/admin" element={<Navigate to="/admin/customers" replace />} />
 
       {/* PRODUCTS */}
       <Route path="/admin/products" element={<ProductList />} />
@@ -29,25 +31,28 @@ export default function App() {
 
       {/* CUSTOMERS */}
       <Route path="/admin/customers" element={<CustomerList />} />
-      <Route path="/admin/customers/:id" element={<CustomerDetails/>} />
-      <Route path="/admin/customers/:id/create-order" element={<CreateOrder/>} />
+      <Route path="/admin/customers/:id" element={<CustomerDetails />} />
+      <Route path="/admin/customers/:id/create-order" element={<CreateOrder />} />
 
       {/* ORDERS */}
       <Route path="/admin/orders" element={<OrderList />} />
 
       {/* BILLS */}
-      <Route path="/admin/bills/:id" element={<BillView/>} />
+      <Route path="/admin/bills/:id" element={<BillView />} />
 
       {/* LOGIN */}
       <Route path="/login" element={<Login />} />
-      <Route path="/admin/customers/:id/approve" element={<ApproveBill/>} />
-<Route path="/admin/customers/:id/reject" element={<RejectBill/>} />
-<Route path="/admin/customers/:id/advance" element={<AdvancePayment/>} />
-<Route path="/bill/:token" element={<PublicBillView/>} />
-<Route path="/admin/orders/:id" element={<OrderDetails/>} />
 
+      {/* BILL STATUS */}
+      <Route path="/admin/customers/:id/approve" element={<ApproveBill />} />
+      <Route path="/admin/customers/:id/reject" element={<RejectBill />} />
+      <Route path="/admin/customers/:id/advance" element={<AdvancePayment />} />
 
+      {/* PUBLIC BILL */}
+      <Route path="/bill/:token" element={<PublicBillView />} />
 
+      {/* ORDER DETAILS */}
+      <Route path="/admin/orders/:id" element={<OrderDetails />} />
     </Routes>
   );
 }

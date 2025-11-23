@@ -1,9 +1,10 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000",
+  baseURL: "https://ramesh-agency-backend.onrender.com",
 });
-
+//https://ramesh-agency-backend.onrender.com
+//http://localhost:5000
 // ---------------------- PRODUCTS ----------------------
 export const fetchProducts = () => API.get("/product/list");
 export const createProduct = (data) => API.post("/product/create", data);
