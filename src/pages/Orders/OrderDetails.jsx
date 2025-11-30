@@ -76,6 +76,16 @@ export default function OrderDetails() {
     }
   };
 
+  const handleAddMeasurement = () => {
+    navigate(`/admin/orders/${id}/measurement`);
+  };
+
+  const handleViewMeasurements = () => {
+    // You can navigate to a measurements list page or show in a modal
+    // For now, let's navigate to the same measurement page but with a view mode
+    navigate(`/admin/orders/${id}/measurement?view=true`);
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -199,6 +209,38 @@ export default function OrderDetails() {
                     ₹{order.grandTotal?.toFixed(2)}
                   </span>
                 </div>
+              </div>
+            </div>
+
+            {/* Measurement Actions Card */}
+            <div className="bg-white text-gray-900 p-6 rounded-xl shadow-sm border border-gray-200">
+              <h2 className="text-xl font-semibold mb-6 text-gray-800 flex items-center gap-3">
+                <span className="text-2xl">📏</span>
+                Measurements
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button 
+                  onClick={handleAddMeasurement}
+                  className="bg-blue-600 text-white p-4 rounded-lg hover:bg-blue-700 transition-all duration-300 flex items-center justify-center gap-3 group"
+                >
+                  <span className="text-xl group-hover:scale-110 transition-transform">➕</span>
+                  <div className="text-left">
+                    <div className="font-semibold text-lg">Add Measurement</div>
+                    <div className="text-blue-100 text-sm">Record new measurements</div>
+                  </div>
+                </button>
+
+                <button 
+                  onClick={handleViewMeasurements}
+                  className="bg-green-600 text-white p-4 rounded-lg hover:bg-green-700 transition-all duration-300 flex items-center justify-center gap-3 group"
+                >
+                  <span className="text-xl group-hover:scale-110 transition-transform">👁️</span>
+                  <div className="text-left">
+                    <div className="font-semibold text-lg">View Measurements</div>
+                    <div className="text-green-100 text-sm">See all measurements</div>
+                  </div>
+                </button>
               </div>
             </div>
 

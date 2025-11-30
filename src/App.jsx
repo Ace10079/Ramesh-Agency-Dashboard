@@ -14,6 +14,7 @@ import RejectBill from "./pages/Customers/RejectBill";
 import AdvancePayment from "./pages/Customers/AdvancePayment";
 import PublicBillView from "./pages/PublicBillView";
 import OrderDetails from "./pages/Orders/OrderDetails";
+import Measurement from "./pages/Measurement";
 
 export default function App() {
   return (
@@ -53,6 +54,8 @@ export default function App() {
 
       {/* ORDER DETAILS */}
       <Route path="/admin/orders/:id" element={<OrderDetails />} />
+      {/* Measurements */}
+      <Route path="/admin/orders/:orderId/measurement" element={<Measurement/>} />
     </Routes>
   );
 }

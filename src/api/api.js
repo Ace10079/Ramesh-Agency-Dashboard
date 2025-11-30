@@ -48,6 +48,11 @@ export const addAdvance = (billId, data) =>
 // ADDED: New endpoint for completing payment
 export const completePayment = (billId) =>
   API.patch(`/bill/${billId}/complete`);
-  
+
+  export const createMeasurement = (data) => API.post("/measurement/create", data);
+  export const updateMeasurement = (id, data) => API.patch(`/measurement/update/${id}`, data);
+  export const deleteMeasurement = (id) => API.delete(`/measurement/delete/${id}`);
+  export const listMeasurements = () => API.get("/measurement/list");
+  export const getMeasurementsByOrder = (orderId) => API.get(`/measurement/order/${orderId}`);
 
 export default API;
