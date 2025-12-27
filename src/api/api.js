@@ -55,4 +55,23 @@ export const completePayment = (billId) =>
   export const listMeasurements = () => API.get("/measurement/list");
   export const getMeasurementsByOrder = (orderId) => API.get(`/measurement/order/${orderId}`);
 
+
+  // ---------------------- MEASUREMENT GROUPS ----------------------
+// Measurement Groups
+export const getMeasurementGroupsByOrder = (orderId) =>
+  API.get(`/measurement-group/order/${orderId}`);
+
+export const createMeasurementGroup = (orderId) =>
+  API.post(`/measurement-group/create`, { orderId });
+
+  export const createMeasurementBill = (data) =>
+  API.post("/measurement-bill/create", data);
+
+export const fetchMeasurementBill = (id) =>
+  API.get(`/measurement-bill/${id}`);
+
+
+
+
+
 export default API;

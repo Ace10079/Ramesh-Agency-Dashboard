@@ -5,13 +5,34 @@ import {
   createMeasurement,
   updateMeasurement,
   deleteMeasurement,
-  getMeasurementsByOrder,
+  getMeasurementGroupsByOrder,
 } from "../api/api";
 
 export default function Measurement() {
+  const [searchParams] = useSearchParams();
+  const groupId = searchParams.get("groupId");
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+
+  // Block access if no groupId
+  if (!groupId) {
+    return (
+      <div className="p-6 text-center min-h-screen flex flex-col items-center justify-center">
+        <div className="bg-white rounded-lg shadow-md p-8 max-w-md w-full">
+          <div className="text-6xl mb-6 text-gray-400">📏</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Measurement Group Required</h2>
+          <p className="text-gray-600 mb-8">Please select a measurement group to continue.</p>
+          <button
+            onClick={() => navigate(`/admin/orders/${orderId}/measurements`)}
+            className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-semibold shadow-sm"
+          >
+            Go to Measurements
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const editId = searchParams.get("edit");
   const viewMode = searchParams.get("view");
 
@@ -21,7 +42,8 @@ export default function Measurement() {
   const [productsLoading, setProductsLoading] = useState(true);
 
   const [form, setForm] = useState({
-    orderId: "",
+    orderId: orderId,
+    groupId: groupId,
     category: "",
     subCategory: "",
     style: "",
@@ -59,7 +81,7 @@ export default function Measurement() {
   // Load measurements
   const loadMeasurements = async () => {
     try {
-      const res = await getMeasurementsByOrder(orderId);
+      const res = await getMeasurementGroupsByOrder(groupId);
       setMeasurements(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error("Error loading measurements:", error);
@@ -68,13 +90,13 @@ export default function Measurement() {
   };
 
   useEffect(() => {
-    setForm((prev) => ({ ...prev, orderId }));
+    setForm((prev) => ({ ...prev, orderId, groupId }));
     loadProducts();
 
     if (viewMode) {
       loadMeasurements();
     }
-  }, [editId, orderId, viewMode]);
+  }, [editId, orderId, groupId, viewMode]);
 
   // Frontend calculateValues (same as backend)
   const calculateValues = (data) => {
@@ -223,6 +245,7 @@ export default function Measurement() {
       // Prepare form data based on category
       const formData = {
         orderId: form.orderId,
+        groupId: form.groupId,
         productId: form.productId,
         category: form.category,
         subCategory: form.subCategory,
@@ -267,18 +290,31 @@ export default function Measurement() {
       if (!editId) {
         await createMeasurement(formData);
         setForm({ 
-          orderId, category: "", subCategory: "", style: "", productId: "", 
-          lengthInches: "", widthInches: "", seats: "", pieces: "" 
+          orderId, 
+          groupId,
+          category: "", 
+          subCategory: "", 
+          style: "", 
+          productId: "", 
+          lengthInches: "", 
+          widthInches: "", 
+          seats: "", 
+          pieces: "" 
         });
         setCalculations({ 
-          meters: 0, panels: 0, totalMeters: 0, squareFeet: 0, trackFeet: 0, 
-          pricePerMeter: 0, totalPrice: 0 
+          meters: 0, 
+          panels: 0, 
+          totalMeters: 0, 
+          squareFeet: 0, 
+          trackFeet: 0, 
+          pricePerMeter: 0, 
+          totalPrice: 0 
         });
         loadMeasurements();
         alert("Measurement added successfully!");
       } else {
         await updateMeasurement(editId, formData);
-        navigate(`/admin/orders/${orderId}`);
+        navigate(`/admin/orders/${orderId}/measurements`);
       }
     } catch (error) {
       console.error("Error saving measurement:", error);
@@ -301,100 +337,216 @@ export default function Measurement() {
   };
 
   const handleEditMeasurement = (measurementId) => {
-    navigate(`/admin/orders/${orderId}/measurement?edit=${measurementId}`);
+    navigate(`/admin/orders/${orderId}/measurement?groupId=${groupId}&edit=${measurementId}`);
   };
 
   // VIEW MODE
   if (viewMode) {
     return (
-      <div className="p-6 max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold">
-            Measurements for Order #{orderId?.slice(-8).toUpperCase()}
-          </h2>
-          <button 
-            onClick={() => navigate(`/admin/orders/${orderId}`)}
-            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
-          >
-            Back to Order
-          </button>
+      <div className="p-4 md:p-6 max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+          <div>
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-800">
+              Measurements for Group #{groupId?.slice(-8).toUpperCase()}
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Order #{orderId?.slice(-8).toUpperCase()}
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button 
+              onClick={() => navigate(`/admin/orders/${orderId}/measurements`)}
+              className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 font-medium text-sm"
+            >
+              Back to Groups
+            </button>
+            <button 
+              onClick={() => navigate(`/admin/orders/${orderId}/measurement?groupId=${groupId}`)}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium text-sm"
+            >
+              ➕ Add Measurement
+            </button>
+          </div>
         </div>
 
         {measurements.length === 0 ? (
-          <div className="bg-white rounded-lg p-8 shadow text-center">
-            <div className="text-6xl mb-4">📏</div>
-            <h3 className="text-xl font-semibold">No Measurements</h3>
+          <div className="bg-white rounded-xl p-6 md:p-8 shadow-sm border border-gray-200 text-center">
+            <div className="text-5xl md:text-6xl mb-4 text-gray-300">📏</div>
+            <h3 className="text-lg md:text-xl font-semibold text-gray-700 mb-2">No Measurements Yet</h3>
+            <p className="text-gray-600 mb-6">Add your first measurement to this group</p>
             <button 
-              onClick={() => navigate(`/admin/orders/${orderId}/measurement`)}
-              className="mt-4 bg-blue-600 text-white px-6 py-3 rounded"
+              onClick={() => navigate(`/admin/orders/${orderId}/measurement?groupId=${groupId}`)}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-semibold shadow-sm"
             >
               Add First Measurement
             </button>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow border">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium">Product</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium">Category</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium">Style</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium">Dimensions</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium">Calculations</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium">Total Price</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {measurements.map((m) => (
-                  <tr key={m._id}>
-                    <td className="px-6 py-4">{m.productId?.productName}</td>
-                    <td className="px-6 py-4">{m.category}</td>
-                    <td className="px-6 py-4">{m.subCategory}</td>
-                    <td className="px-6 py-4">{m.style}</td>
-                    <td className="px-6 py-4">
-                      {m.lengthInches > 0 && `${m.lengthInches}" × ${m.widthInches}"`}
-                      {m.seats > 0 && ` | Seats: ${m.seats}`}
-                      {m.pieces > 0 && ` | Pieces: ${m.pieces}`}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm">
-                        {m.panels > 0 && <div>Panels: {m.panels}</div>}
-                        {m.meters > 0 && <div>Meters: {m.meters}m</div>}
-                        {m.totalMeters > 0 && <div>Total Meters: {m.totalMeters}m</div>}
-                        {m.squareFeet > 0 && <div>Area: {m.squareFeet} sq.ft</div>}
-                        {m.trackFeet > 0 && <div>Track: {m.trackFeet} ft</div>}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            {/* Mobile Cards View */}
+            <div className="md:hidden">
+              {measurements.map((m) => (
+                <div key={m._id} className="border-b border-gray-200 p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h4 className="font-semibold text-gray-800">{m.productId?.productName}</h4>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">{m.category}</span>
+                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">{m.subCategory}</span>
+                        {m.style && <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">{m.style}</span>}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 font-semibold text-green-600">
-                      ₹{(m.totalMeters * (m.productId?.price || 0)).toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 space-x-2">
-                      <button
-                        onClick={() => handleEditMeasurement(m._id)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteMeasurement(m._id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-green-600 text-lg">
+                        ₹{(m.totalMeters * (m.productId?.price || 0)).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Dimensions */}
+                  <div className="mb-3">
+                    {m.lengthInches > 0 && (
+                      <div className="text-sm text-gray-600">
+                        <span className="font-medium">Dimensions:</span> {m.lengthInches}" × {m.widthInches}"
+                      </div>
+                    )}
+                    {m.seats > 0 && (
+                      <div className="text-sm text-gray-600">
+                        <span className="font-medium">Seats:</span> {m.seats}
+                      </div>
+                    )}
+                    {m.pieces > 0 && (
+                      <div className="text-sm text-gray-600">
+                        <span className="font-medium">Pieces:</span> {m.pieces}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Calculations */}
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    {m.panels > 0 && (
+                      <div className="bg-gray-50 p-2 rounded">
+                        <div className="text-xs text-gray-500">Panels</div>
+                        <div className="font-medium">{m.panels}</div>
+                      </div>
+                    )}
+                    {m.totalMeters > 0 && (
+                      <div className="bg-gray-50 p-2 rounded">
+                        <div className="text-xs text-gray-500">Total Meters</div>
+                        <div className="font-medium">{m.totalMeters}m</div>
+                      </div>
+                    )}
+                    {m.squareFeet > 0 && (
+                      <div className="bg-gray-50 p-2 rounded">
+                        <div className="text-xs text-gray-500">Area</div>
+                        <div className="font-medium">{m.squareFeet} sq.ft</div>
+                      </div>
+                    )}
+                    {m.trackFeet > 0 && (
+                      <div className="bg-gray-50 p-2 rounded">
+                        <div className="text-xs text-gray-500">Track</div>
+                        <div className="font-medium">{m.trackFeet} ft</div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="flex justify-between pt-3 border-t border-gray-100">
+                    <button
+                      onClick={() => handleEditMeasurement(m._id)}
+                      className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteMeasurement(m._id)}
+                      className="text-red-600 hover:text-red-800 font-medium text-sm"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Style</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dimensions</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Calculations</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Price</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {measurements.map((m) => (
+                    <tr key={m._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="font-medium text-gray-900">{m.productId?.productName}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">{m.category}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">{m.subCategory}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {m.style && <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">{m.style}</span>}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {m.lengthInches > 0 && <div>{m.lengthInches}" × {m.widthInches}"</div>}
+                        {m.seats > 0 && <div>Seats: {m.seats}</div>}
+                        {m.pieces > 0 && <div>Pieces: {m.pieces}</div>}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-1">
+                          {m.panels > 0 && <div className="text-sm">Panels: {m.panels}</div>}
+                          {m.totalMeters > 0 && <div className="text-sm">Total Meters: {m.totalMeters}m</div>}
+                          {m.squareFeet > 0 && <div className="text-sm">Area: {m.squareFeet} sq.ft</div>}
+                          {m.trackFeet > 0 && <div className="text-sm">Track: {m.trackFeet} ft</div>}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap font-semibold text-green-600">
+                        ₹{(m.totalMeters * (m.productId?.price || 0)).toFixed(2)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap space-x-2">
+                        <button
+                          onClick={() => handleEditMeasurement(m._id)}
+                          className="text-blue-600 hover:text-blue-900 font-medium text-sm"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMeasurement(m._id)}
+                          className="text-red-600 hover:text-red-900 font-medium text-sm"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
-        <div className="mt-6 text-right">
+        <div className="mt-6 flex justify-between items-center">
           <button 
-            onClick={() => navigate(`/admin/orders/${orderId}/measurement`)}
-            className="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700"
+            onClick={() => navigate(`/admin/orders/${orderId}/measurements`)}
+            className="text-gray-600 hover:text-gray-800 font-medium"
+          >
+            ← Back to Measurement Groups
+          </button>
+          <button 
+            onClick={() => navigate(`/admin/orders/${orderId}/measurement?groupId=${groupId}`)}
+            className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-semibold shadow-sm"
           >
             ➕ Add New Measurement
           </button>
@@ -405,29 +557,34 @@ export default function Measurement() {
 
   // ADD/EDIT FORM
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold">
-          {editId ? "Edit Measurement" : "Add Measurement"}
-        </h2>
+    <div className="p-4 md:p-6 max-w-2xl mx-auto">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+        <div>
+          <h2 className="text-xl md:text-2xl font-semibold text-gray-800">
+            {editId ? "Edit Measurement" : "Add Measurement"}
+          </h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Group #{groupId?.slice(-8).toUpperCase()}
+          </p>
+        </div>
         <button 
-          onClick={() => navigate(`/admin/orders/${orderId}`)}
-          className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+          onClick={() => navigate(`/admin/orders/${orderId}/measurements`)}
+          className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 font-medium text-sm w-full md:w-auto"
         >
-          Back to Order
+          Back to Groups
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow">
+      <form onSubmit={handleSubmit} className="space-y-6 bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
         
         {/* Category */}
         <div>
-          <label className="block mb-2 font-semibold text-gray-700">Category *</label>
+          <label className="block mb-2 font-medium text-gray-700">Category *</label>
           <select
             name="category"
             value={form.category}
             onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
             required
           >
             <option value="">Select Category</option>
@@ -439,12 +596,12 @@ export default function Measurement() {
         {/* SubCategory */}
         {form.category && (
           <div>
-            <label className="block mb-2 font-semibold text-gray-700">Type *</label>
+            <label className="block mb-2 font-medium text-gray-700">Type *</label>
             <select
               name="subCategory"
               value={form.subCategory}
               onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
               required
             >
               <option value="">Select Type</option>
@@ -468,12 +625,12 @@ export default function Measurement() {
         {/* Style for Curtains */}
         {form.category === "Curtains" && form.subCategory === "Curtains" && (
           <div>
-            <label className="block mb-2 font-semibold text-gray-700">Style *</label>
+            <label className="block mb-2 font-medium text-gray-700">Style *</label>
             <select
               name="style"
               value={form.style}
               onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
               required
             >
               <option value="">Select Style</option>
@@ -488,12 +645,12 @@ export default function Measurement() {
         {/* Style for Blinds */}
         {form.category === "Curtains" && form.subCategory === "Blinds" && (
           <div>
-            <label className="block mb-2 font-semibold text-gray-700">Blind Type *</label>
+            <label className="block mb-2 font-medium text-gray-700">Blind Type *</label>
             <select
               name="style"
               value={form.style}
               onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
               required
             >
               <option value="">Select Blind Type</option>
@@ -509,13 +666,13 @@ export default function Measurement() {
         {/* Upholstery Specific Fields */}
         {form.category === "Upholstery" && form.subCategory === "Sofa" && (
           <div>
-            <label className="block mb-2 font-semibold text-gray-700">Number of Seats *</label>
+            <label className="block mb-2 font-medium text-gray-700">Number of Seats *</label>
             <input
               type="number"
               name="seats"
               value={form.seats}
               onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
               required
               min="1"
               placeholder="Enter number of seats"
@@ -525,13 +682,13 @@ export default function Measurement() {
 
         {form.category === "Upholstery" && form.subCategory === "Puffy" && (
           <div>
-            <label className="block mb-2 font-semibold text-gray-700">Number of Pieces *</label>
+            <label className="block mb-2 font-medium text-gray-700">Number of Pieces *</label>
             <input
               type="number"
               name="pieces"
               value={form.pieces}
               onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
               required
               min="1"
               placeholder="Enter number of pieces"
@@ -544,12 +701,12 @@ export default function Measurement() {
           (form.category === "Upholstery" && form.subCategory) || 
           form.subCategory === "Blinds") && (
           <div>
-            <label className="block mb-2 font-semibold text-gray-700">Product *</label>
+            <label className="block mb-2 font-medium text-gray-700">Product *</label>
             <select
               name="productId"
               value={form.productId}
               onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
               required
             >
               <option value="">{productsLoading ? "Loading products..." : "Select Product"}</option>
@@ -568,13 +725,13 @@ export default function Measurement() {
           (form.category === "Upholstery" && form.subCategory === "Headboard")) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block mb-2 font-semibold text-gray-700">Length (inches) *</label>
+              <label className="block mb-2 font-medium text-gray-700">Length (inches) *</label>
               <input
                 type="number"
                 name="lengthInches"
                 value={form.lengthInches}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 required
                 min="1"
                 step="0.1"
@@ -582,13 +739,13 @@ export default function Measurement() {
               />
             </div>
             <div>
-              <label className="block mb-2 font-semibold text-gray-700">Width (inches) *</label>
+              <label className="block mb-2 font-medium text-gray-700">Width (inches) *</label>
               <input
                 type="number"
                 name="widthInches"
                 value={form.widthInches}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                 required
                 min="1"
                 step="0.1"
@@ -600,56 +757,59 @@ export default function Measurement() {
 
         {/* Calculations Display */}
         {(calculations.totalMeters > 0 || calculations.squareFeet > 0 || calculations.panels > 0) && (
-          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <h3 className="font-semibold text-gray-700 mb-3">Calculations</h3>
+          <div className="bg-gray-50 p-4 md:p-6 rounded-xl border border-gray-200">
+            <h3 className="font-semibold text-gray-700 mb-4 text-lg">Calculations</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-sm">
               {calculations.meters > 0 && (
-                <div className="bg-white p-3 rounded border">
-                  <div className="text-gray-600">Meters</div>
-                  <div className="font-semibold">{calculations.meters}m</div>
+                <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                  <div className="text-gray-600 text-xs">Meters</div>
+                  <div className="font-bold text-gray-800">{calculations.meters}m</div>
                 </div>
               )}
               {calculations.panels > 0 && (
-                <div className="bg-white p-3 rounded border">
-                  <div className="text-gray-600">Panels</div>
-                  <div className="font-semibold">{calculations.panels}</div>
+                <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                  <div className="text-gray-600 text-xs">Panels</div>
+                  <div className="font-bold text-gray-800">{calculations.panels}</div>
                 </div>
               )}
               {calculations.totalMeters > 0 && (
-                <div className="bg-white p-3 rounded border">
-                  <div className="text-gray-600">Total Meters</div>
-                  <div className="font-semibold">{calculations.totalMeters}m</div>
+                <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                  <div className="text-gray-600 text-xs">Total Meters</div>
+                  <div className="font-bold text-gray-800">{calculations.totalMeters}m</div>
                 </div>
               )}
               {calculations.squareFeet > 0 && (
-                <div className="bg-white p-3 rounded border">
-                  <div className="text-gray-600">Square Feet</div>
-                  <div className="font-semibold">{calculations.squareFeet} sq.ft</div>
+                <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                  <div className="text-gray-600 text-xs">Square Feet</div>
+                  <div className="font-bold text-gray-800">{calculations.squareFeet} sq.ft</div>
                 </div>
               )}
               {calculations.trackFeet > 0 && (
-                <div className="bg-white p-3 rounded border">
-                  <div className="text-gray-600">Track Required</div>
-                  <div className="font-semibold">{calculations.trackFeet} ft</div>
+                <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                  <div className="text-gray-600 text-xs">Track Required</div>
+                  <div className="font-bold text-gray-800">{calculations.trackFeet} ft</div>
                 </div>
               )}
-              <div className="bg-white p-3 rounded border">
-                <div className="text-gray-600">Price per Meter</div>
-                <div className="font-semibold">₹{calculations.pricePerMeter}</div>
+              <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
+                <div className="text-gray-600 text-xs">Price per Meter</div>
+                <div className="font-bold text-gray-800">₹{calculations.pricePerMeter}</div>
               </div>
             </div>
 
-            <div className="mt-4 p-3 bg-white rounded border-2 border-green-200">
+            <div className="mt-4 p-4 bg-white rounded-xl border-2 border-green-200 shadow-sm">
               <div className="flex justify-between items-center">
-                <span className="text-lg font-semibold text-gray-700">Total Price</span>
-                <span className="text-2xl font-bold text-green-600">₹{calculations.totalPrice.toFixed(2)}</span>
+                <div>
+                  <span className="text-lg font-bold text-gray-800">Total Price</span>
+                  <p className="text-xs text-gray-500 mt-1">Including all calculations</p>
+                </div>
+                <span className="text-2xl md:text-3xl font-bold text-green-600">₹{calculations.totalPrice.toFixed(2)}</span>
               </div>
             </div>
           </div>
         )}
 
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 pt-4">
           <button
             type="submit"
             disabled={loading || !form.productId || 
@@ -657,30 +817,31 @@ export default function Measurement() {
                (!form.lengthInches || !form.widthInches)) ||
               (form.category === "Upholstery" && form.subCategory === "Sofa" && !form.seats) ||
               (form.category === "Upholstery" && form.subCategory === "Puffy" && !form.pieces)}
-            className="flex-1 bg-blue-600 text-white py-3 px-6 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
+            className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-sm transition"
           >
-            {loading ? "Saving..." : editId ? "Update Measurement" : "Add Measurement"}
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Saving...
+              </span>
+            ) : editId ? "Update Measurement" : "Add Measurement"}
           </button>
           {!editId && (
             <button
               type="button"
-              onClick={() => navigate(`/admin/orders/${orderId}`)}
-              className="flex-1 bg-gray-600 text-white py-3 px-6 rounded hover:bg-gray-700 font-semibold"
+              onClick={() => navigate(`/admin/orders/${orderId}/measurements`)}
+              className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-lg hover:bg-gray-700 font-semibold shadow-sm transition"
             >
-              Finish
+              Finish & Go Back
             </button>
           )}
         </div>
       </form>
 
-      <div className="mt-4 text-center">
-        <button
-          onClick={() => navigate(`/admin/orders/${orderId}/measurement?view=true`)}
-          className="text-blue-600 hover:text-blue-800 underline"
-        >
-          View All Measurements
-        </button>
-      </div>
+     
     </div>
   );
 }

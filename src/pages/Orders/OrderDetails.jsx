@@ -83,7 +83,8 @@ export default function OrderDetails() {
   const handleViewMeasurements = () => {
     // You can navigate to a measurements list page or show in a modal
     // For now, let's navigate to the same measurement page but with a view mode
-    navigate(`/admin/orders/${id}/measurement?view=true`);
+    navigate(`/admin/orders/${id}/measurements`);
+
   };
 
   if (loading) {
