@@ -27,7 +27,7 @@ export default function MeasurementBillView() {
   if (loading) return <AdminLayout>Loading...</AdminLayout>;
   if (!bill) return <AdminLayout>Bill not found</AdminLayout>;
 
-  const publicLink = `${window.location.origin.replace(/:\d+$/, ":5174")}/measurement-bill/${bill.billLinkToken}`;
+  const publicLink = `${window.location.origin.replace(/:\d+$/, ":5173")}/measurement-bill/${bill.billLinkToken}`;
 
   return (
     <AdminLayout>
